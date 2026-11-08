@@ -1,0 +1,51 @@
+name: Deploy site
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: n8n deployment record ID
+        required: true
+        type: string
+      callback_url:
+        description: n8n callback webhook URL
+        required: true
+        type: string
+      callback_token:
+        description: Shared callback secret
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      # TODO: Replace this step with your actual build/deploy steps.
+      - name: Build and deploy placeholder
+        run: |
+          echo "Replace with your build and deployment commands"
+      - name: Send success callback
+        if: success()
+        env:
+          CALLBACK_URL: ${{ inputs.callback_url }}
+          CALLBACK_TOKEN: ${{ inputs.callback_token }}
+          DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl --fail-with-body -X POST "$CALLBACK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"callback_token\":\"$CALLBACK_TOKEN\",\"event_key\":\"github-${RUN_ID}-success\",\"deployment_id\":\"$DEPLOYMENT_ID\",\"status\":\"success\",\"github_run_id\":\"$RUN_ID\",\"github_run_url\":\"$RUN_URL\"}"
+      - name: Send failure callback
+        if: failure()
+        env:
+          CALLBACK_URL: ${{ inputs.callback_url }}
+          CALLBACK_TOKEN: ${{ inputs.callback_token }}
+          DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl --fail-with-body -X POST "$CALLBACK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"callback_token\":\"$CALLBACK_TOKEN\",\"event_key\":\"github-${RUN_ID}-failure\",\"deployment_id\":\"$DEPLOYMENT_ID\",\"status\":\"failure\",\"github_run_id\":\"$RUN_ID\",\"github_run_url\":\"$RUN_URL\"}"
